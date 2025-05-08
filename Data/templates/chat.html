@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chatbot - Brave Coder</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css">
+</head>
+<body>
+  <div class="wrapper">
+    <div class="title">💬 DiagnoAI </div>
+    <div class="box" id="chatbox">
+      <!-- Dynamic chat messages will appear here -->
+    </div>
+
+    <div class="typing-area">
+      <div class="input-field">
+        <input type="text" id="msg" placeholder="Ask me something..." required>
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById("msg");
+    const button = document.getElementById("sendBtn");
+    const chatbox = document.getElementById("chatbox");
+
+    function appendMessage(content, sender = "user") {
+      const item = document.createElement("div");
+      item.classList.add("item");
+      if (sender === "user") item.classList.add("right");
+
+      const msg = document.createElement("div");
+      msg.classList.add("msg");
+
+      // Remove "Context: " if it's the start of the bot response
+      if (sender === "bot" && content.startsWith("Context: ")) {
+        content = content.replace("Context: ", "");
+      }
+
+      msg.innerHTML = `<p>${content}</p>`;
+      item.appendChild(msg);
+      chatbox.appendChild(item);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage(text, "user");
+      input.value = "";
+
+      fetch("/get", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "msg=" + encodeURIComponent(text)
+      })
+      .then(res => res.text())
+      .then(data => {
+        appendMessage(data, "bot");
+      })
+      .catch(err => {
+        appendMessage("Sorry, something went wrong.", "bot");
+        console.error(err);
+      });
+    }
+
+    button.addEventListener("click", sendMessage);
+    input.addEventListener("keypress", function (e) {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
+</body>
+</html>
